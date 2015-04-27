@@ -38,6 +38,9 @@ func (g *Gmail) GetProfile() (response UserProfile, err error) {
 			if err != nil {
 				return toReturn, err
 			}
+			if toReturn.Email == "" {
+				return toReturn, errors.New("Incorrect API key")
+			}
 			return toReturn, nil
 		}
 	}

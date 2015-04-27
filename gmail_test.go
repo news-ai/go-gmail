@@ -1,3 +1,5 @@
 package gmail
 
-var AccessToken = "ya29.YgF4ewTDS0bh_Iank1f5fw3sBXwbhnK7Z9KsWyIR2Zag-rSJNGPShPd3SwY8vY0Vc3ovhkHM9yZMYw"
+// Removing token:
+// curl https://accounts.google.com/o/oauth2/revoke?token=
+var AccessToken = ""

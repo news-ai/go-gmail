@@ -80,6 +80,9 @@ func (g *Gmail) GetEmails(MaxResults int) (response EmailListResponse, err error
 			if err != nil {
 				return toReturn, err
 			}
+			if toReturn.ResultSizeEstimate == 0 {
+				return toReturn, errors.New("Incorrect API key")
+			}
 			return toReturn, nil
 		}
 	}
@@ -103,6 +106,9 @@ func (g *Gmail) GetEmailById(emailId string) (response EmailIdResponse, err erro
 			err = json.Unmarshal(contents, &toReturn)
 			if err != nil {
 				return toReturn, err
+			}
+			if toReturn.SizeEstimate == 0 {
+				return toReturn, errors.New("Incorrect API key")
 			}
 			return toReturn, nil
 		}

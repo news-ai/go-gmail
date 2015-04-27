@@ -19,9 +19,23 @@ The rate limit will be set using:
 1. Daily Usage at 1,000,000,000 quota units per day
 2. Per User Rate Limit at 250 quota units per user per second
 
-### Users
+### Documentation
 
-GetProfile of a single user
+#### 1. Drafts
+
+#### 2. History
+
+#### 3. Labels
+
+#### 4. Messages
+
+#### 5. Message Attachments
+
+#### 6. Threads
+
+#### 7. Users
+
+Get the profile of the user the access token belongs to.
 
 ```go
 var gmail Gmail

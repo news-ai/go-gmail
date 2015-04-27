@@ -14,6 +14,7 @@ func TestGetEmails(t *testing.T) {
 		return
 	}
 	fmt.Sprintf("", allResults)
+	return
 }
 
 func TestGetEmailById(t *testing.T) {
@@ -30,4 +31,5 @@ func TestGetEmailById(t *testing.T) {
 		return
 	}
 	fmt.Sprintf("", singleResult.Snippet)
+	return
 }

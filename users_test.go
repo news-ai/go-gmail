@@ -14,4 +14,5 @@ func TestGetProfile(t *testing.T) {
 		return
 	}
 	fmt.Sprintf("%s\n", singleResult.Email)
+	return
 }
