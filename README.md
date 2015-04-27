@@ -21,6 +21,12 @@ The rate limit will be set using:
 
 ### Documentation
 
+Get the package, and install it:
+
+`go get github.com/zybra/go-gmail`, `import Gmail "github.com/zybra/go-gmail"`
+
+All of the methods below require an access token for a single user. 
+
 #### 1. Drafts
 
 #### 2. History
@@ -29,21 +35,54 @@ The rate limit will be set using:
 
 #### 4. Messages
 
+Get the emails of the user.
+
+```go
+var gmail Gmail.Gmail
+gmail.AccessToken = AccessToken
+allResults, err := gmail.GetEmails(100)
+if err != nil {
+	fmt.Println(err)
+	return
+}
+fmt.Println(allResults)
+return
+```
+
+Get a single email of the user given an Id.
+
+```go
+var gmail Gmail.Gmail
+gmail.AccessToken = AccessToken
+allResults, err := gmail.GetEmails(100)
+if err != nil {
+	fmt.Println(err)
+	return
+}
+singleResult, err := gmail.GetEmailById(allResults.Messages[0].ID)
+if err != nil {
+	fmt.Println(err)
+	return
+}
+fmt.Println(singleResult)
+return
+```
+
 #### 5. Message Attachments
 
 #### 6. Threads
 
 #### 7. Users
 
-Get the profile of the user the access token belongs to.
+Get the profile of the user.
 
 ```go
-var gmail Gmail
+var gmail Gmail.Gmail
 gmail.AccessToken = AccessToken
 singleResult, err := gmail.GetProfile()
 if err != nil {
 	fmt.Println(err)
 	return
 }
-fmt.Sprintf("%s\n", singleResult.Email)
+fmt.Println(singleResult)
 ```
