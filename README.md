@@ -70,6 +70,19 @@ return
 
 #### 5. Message Attachments
 
+Get attachment from a specific email that's received by a user.
+
+```go
+var gmail Gmail
+gmail.AccessToken = AccessToken
+singleAttachment, err := gmail.GetAttachmentById("", "")
+if err != nil {
+	fmt.Println(err)
+	return
+}
+fmt.Println(singleAttachment)
+```
+
 #### 6. Threads
 
 #### 7. Users
