@@ -23,7 +23,7 @@ The rate limit will be set using:
 
 Get the package, and install it:
 
-`go get github.com/zybra/go-gmail`, `import Gmail "github.com/zybra/go-gmail"`
+`go get github.com/abhiagarwal/go-gmail`, `import Gmail "github.com/abhiagarwal/go-gmail"`
 
 All of the methods below require an access token for a single user. 
 
