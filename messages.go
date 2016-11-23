@@ -82,6 +82,8 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 		var message Message
 		temp := []byte("From: 'me'\r\n" +
 			"reply-to: " + from + "\r\n" +
+			"Content-type: text/html;charset=iso-8859-1\r\n" +
+			"MIME-Version: 1.0\r\n" +
 			"To:  " + to + "\r\n" +
 			"Subject: " + subject + "\r\n" +
 			"\r\n" + body)
@@ -96,10 +98,14 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 			log.Errorf(c, "%v", err)
 			return err
 		}
+
 		messageQuery := bytes.NewReader(messageJson)
 
-		URL := BASEURL + "gmail/v1/users/messages/send?access_token=" + g.AccessToken
+		URL := BASEURL + "gmail/v1/users/me/messages/send"
 		req, _ := http.NewRequest("POST", URL, messageQuery)
+
+		req.Header.Add("Authorization", "Bearer "+g.AccessToken)
+		req.Header.Add("Content-Type", "application/json")
 
 		response, err := client.Do(req)
 		if err != nil {
