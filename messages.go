@@ -1,14 +1,17 @@
 package gmail
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
 
 	"golang.org/x/net/context"
@@ -67,6 +70,51 @@ type EmailIdResponse struct {
 	ThreadId     string  `json:"threadId"`
 }
 
+type Message struct {
+	Raw string `json:"raw,omitempty"`
+}
+
+func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string) error {
+	if len(g.AccessToken) > 0 {
+		contextWithTimeout, _ := context.WithTimeout(c, time.Second*15)
+		client := urlfetch.Client(contextWithTimeout)
+
+		var message Message
+		temp := []byte("From: 'me'\r\n" +
+			"reply-to: " + from + "\r\n" +
+			"To:  " + to + "\r\n" +
+			"Subject: " + subject + "\r\n" +
+			"\r\n" + body)
+
+		message.Raw = base64.StdEncoding.EncodeToString(temp)
+		message.Raw = strings.Replace(message.Raw, "/", "_", -1)
+		message.Raw = strings.Replace(message.Raw, "+", "-", -1)
+		message.Raw = strings.Replace(message.Raw, "=", "", -1)
+
+		messageJson, err := json.Marshal(message)
+		if err != nil {
+			log.Errorf(c, "%v", err)
+			return err
+		}
+		messageQuery := bytes.NewReader(messageJson)
+
+		URL := BASEURL + "gmail/v1/users/messages/send?access_token=" + g.AccessToken
+		req, _ := http.NewRequest("POST", URL, messageQuery)
+
+		response, err := client.Do(req)
+		if err != nil {
+			log.Errorf(c, "%v", err)
+			return err
+		}
+
+		log.Infof(c, "%v", response)
+
+		return nil
+	}
+
+	return errors.New("No access token supplied")
+}
+
 func (g *Gmail) GetEmails(c context.Context, MaxResults int) (response EmailListResponse, err error) {
 	toReturn := EmailListResponse{}
 	if len(g.AccessToken) > 0 {
@@ -78,18 +126,20 @@ func (g *Gmail) GetEmails(c context.Context, MaxResults int) (response EmailList
 
 		response, err := client.Do(req)
 		if err != nil {
-			fmt.Printf("%s", err)
+			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
 
 		defer response.Body.Close()
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {
+			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
 
 		err = json.Unmarshal(contents, &toReturn)
 		if err != nil {
+			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
 
@@ -114,18 +164,20 @@ func (g *Gmail) GetEmailById(c context.Context, emailId string) (response EmailI
 
 		response, err := client.Do(req)
 		if err != nil {
-			fmt.Printf("%s", err)
+			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
 
 		defer response.Body.Close()
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {
+			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
 
 		err = json.Unmarshal(contents, &toReturn)
 		if err != nil {
+			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
 
