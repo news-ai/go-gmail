@@ -75,7 +75,7 @@ type Message struct {
 	Raw string `json:"raw,omitempty"`
 }
 
-func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string) error {
+func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string) (string, string, error) {
 	if len(g.AccessToken) > 0 {
 		contextWithTimeout, _ := context.WithTimeout(c, time.Second*15)
 		client := urlfetch.Client(contextWithTimeout)
@@ -97,7 +97,7 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 		messageJson, err := json.Marshal(message)
 		if err != nil {
 			log.Errorf(c, "%v", err)
-			return err
+			return "", "", err
 		}
 
 		messageQuery := bytes.NewReader(messageJson)
@@ -111,7 +111,7 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 		response, err := client.Do(req)
 		if err != nil {
 			log.Errorf(c, "%v", err)
-			return err
+			return "", "", err
 		}
 
 		// Decode JSON from Google
@@ -120,15 +120,13 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 		err = decoder.Decode(&gmailMessage)
 		if err != nil {
 			log.Errorf(c, "%v", err)
-			return err
+			return "", "", err
 		}
 
-		log.Infof(c, "%v", gmailMessage)
-
-		return nil
+		return gmailMessage.Id, gmailMessage.ThreadId, nil
 	}
 
-	return errors.New("No access token supplied")
+	return "", "", errors.New("No access token supplied")
 }
 
 func (g *Gmail) GetEmails(c context.Context, MaxResults int) (response EmailListResponse, err error) {
