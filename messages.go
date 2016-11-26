@@ -15,6 +15,7 @@ import (
 	"google.golang.org/appengine/urlfetch"
 
 	"golang.org/x/net/context"
+	gmailv1 "google.golang.org/api/gmail/v1"
 )
 
 type EmailListResponse struct {
@@ -80,7 +81,7 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 		client := urlfetch.Client(contextWithTimeout)
 
 		var message Message
-		temp := []byte("From: 'me'\r\n" +
+		temp := []byte("From: " + from + "\r\n" +
 			"reply-to: " + from + "\r\n" +
 			"Content-type: text/html;charset=iso-8859-1\r\n" +
 			"MIME-Version: 1.0\r\n" +
@@ -113,7 +114,16 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 			return err
 		}
 
-		log.Infof(c, "%v", response)
+		// Decode JSON from Google
+		decoder := json.NewDecoder(response.Body)
+		var gmailMessage gmailv1.Message
+		err = decoder.Decode(&gmailMessage)
+		if err != nil {
+			log.Errorf(c, "%v", err)
+			return err
+		}
+
+		log.Infof(c, "%v", gmailMessage)
 
 		return nil
 	}
