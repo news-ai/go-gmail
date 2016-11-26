@@ -14,6 +14,9 @@ import (
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
 
+	"github.com/news-ai/tabulae/attach"
+	"github.com/news-ai/tabulae/models"
+
 	"golang.org/x/net/context"
 	gmailv1 "google.golang.org/api/gmail/v1"
 )
@@ -73,6 +76,95 @@ type EmailIdResponse struct {
 
 type Message struct {
 	Raw string `json:"raw,omitempty"`
+}
+
+func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, from string, to string, subject string, body string, email models.Email, files []models.File) (string, string, error) {
+
+	if len(g.AccessToken) > 0 {
+		contextWithTimeout, _ := context.WithTimeout(c, time.Second*15)
+		client := urlfetch.Client(contextWithTimeout)
+
+		nl := "\r\n" // newline
+		boundary := "__newsai_tabulae__"
+
+		var message Message
+		temp := []byte(
+			"MIME-Version: 1.0" + nl +
+
+				"To:  " + to + nl +
+				"From: " + from + nl +
+				"reply-to: " + from + nl +
+				"Subject: " + subject + nl +
+
+				"Content-type: multipart/alternative; boundary=" + boundary + nl +
+				"--" + boundary +
+
+				"Content-Type: text/html; charset=UTF-8" +
+				"Content-Transfer-Encoding: base64" + nl +
+				body + nl,
+		)
+
+		for i := 0; i < len(files); i++ {
+			bytesArray, attachmentType, fileNames, err := attach.GetAttachmentsForEmail(r, email, files)
+			if err == nil {
+				for i := 0; i < len(bytesArray); i++ {
+					attachment := []byte(
+						"--" + boundary + nl +
+							"Content-Type: " + attachmentType[i] + "; name=\"" + fileNames[i] + "\"" + nl +
+							"Content-Disposition: attachment; filename=\"" + fileNames[i] + "\"" + nl +
+							"Content-Transfer-Encoding: base64" + nl +
+							string(bytesArray[i]) + nl,
+					)
+
+					temp = append(temp, attachment...)
+				}
+			}
+		}
+
+		finalBoundry := []byte(
+			"--" + boundary + "--",
+		)
+
+		temp = append(temp, finalBoundry...)
+
+		message.Raw = base64.StdEncoding.EncodeToString(temp)
+		message.Raw = strings.Replace(message.Raw, "/", "_", -1)
+		message.Raw = strings.Replace(message.Raw, "+", "-", -1)
+		message.Raw = strings.Replace(message.Raw, "=", "", -1)
+
+		messageJson, err := json.Marshal(message)
+		if err != nil {
+			log.Errorf(c, "%v", err)
+			return "", "", err
+		}
+
+		messageQuery := bytes.NewReader(messageJson)
+
+		URL := BASEURL + "gmail/v1/users/me/messages/send?uploadType=media"
+		req, _ := http.NewRequest("POST", URL, messageQuery)
+
+		req.Header.Add("Authorization", "Bearer "+g.AccessToken)
+		req.Header.Add("Content-Type", "application/json")
+
+		response, err := client.Do(req)
+		if err != nil {
+			log.Errorf(c, "%v", err)
+			return "", "", err
+		}
+
+		// Decode JSON from Google
+		decoder := json.NewDecoder(response.Body)
+		var gmailMessage gmailv1.Message
+		err = decoder.Decode(&gmailMessage)
+		if err != nil {
+			log.Errorf(c, "%v", err)
+			return "", "", err
+		}
+
+		return gmailMessage.Id, gmailMessage.ThreadId, nil
+	}
+
+	return "", "", errors.New("No access token supplied")
 }
 
 func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string) (string, string, error) {
