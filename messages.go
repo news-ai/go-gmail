@@ -88,28 +88,25 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 		boundary := "__newsai_tabulae__"
 
 		var message Message
-		temp := []byte(
-			"MIME-Version: 1.0" + nl +
+		temp := []byte("MIME-Version: 1.0" + nl +
+			"To:  " + to + nl +
+			"From: " + from + nl +
+			"reply-to: " + from + nl +
+			"Subject: " + subject + nl +
 
-				"To:  " + to + nl +
-				"From: " + from + nl +
-				"reply-to: " + from + nl +
-				"Subject: " + subject + nl +
+			"Content-type: multipart/alternative; boundary=\"" + boundary + "\"" + nl +
+			"--" + boundary + "--" + nl +
 
-				"Content-type: multipart/alternative; boundary=" + boundary + nl +
-				"--" + boundary +
-
-				"Content-Type: text/html; charset=UTF-8" +
-				"Content-Transfer-Encoding: base64" + nl +
-				body + nl,
-		)
+			"Content-Type: text/html; charset=UTF-8" + nl +
+			"Content-Transfer-Encoding: base64" + nl +
+			nl + body)
 
 		for i := 0; i < len(files); i++ {
 			bytesArray, attachmentType, fileNames, err := attach.GetAttachmentsForEmail(r, email, files)
 			if err == nil {
 				for i := 0; i < len(bytesArray); i++ {
 					attachment := []byte(
-						"--" + boundary + nl +
+						"--" + boundary + "--" + nl +
 							"Content-Type: " + attachmentType[i] + "; name=\"" + fileNames[i] + "\"" + nl +
 							"Content-Disposition: attachment; filename=\"" + fileNames[i] + "\"" + nl +
 							"Content-Transfer-Encoding: base64" + nl +
@@ -140,7 +137,9 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 
 		messageQuery := bytes.NewReader(messageJson)
 
-		URL := BASEURL + "gmail/v1/users/me/messages/send?uploadType=media"
+		log.Infof(c, "%v", messageQuery)
+
+		URL := BASEURL + "gmail/v1/users/me/messages/send?uploadType=multipart"
 		req, _ := http.NewRequest("POST", URL, messageQuery)
 
 		req.Header.Add("Authorization", "Bearer "+g.AccessToken)
@@ -160,6 +159,8 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 			log.Errorf(c, "%v", err)
 			return "", "", err
 		}
+
+		log.Infof(c, "%v", gmailMessage)
 
 		return gmailMessage.Id, gmailMessage.ThreadId, nil
 	}
