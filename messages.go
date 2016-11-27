@@ -94,23 +94,34 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 			"reply-to: " + from + nl +
 			"Subject: " + subject + nl +
 
-			"Content-type: multipart/alternative; boundary=\"" + boundary + "\"" + nl +
+			"Content-Type: multipart/mixed; boundary=\"" + boundary + "\"" + nl + nl +
+
+			// Boundary one is email itself
 			"--" + boundary + nl +
 
 			"Content-Type: text/html; charset=UTF-8" + nl +
-			"Content-Transfer-Encoding: base64" + nl +
-			nl + body + nl)
+			"MIME-Version: 1.0" + nl +
+			"Content-Transfer-Encoding: base64" + nl + nl +
+
+			// Body itself
+			body + nl + nl)
 
 		for i := 0; i < len(files); i++ {
 			bytesArray, attachmentType, fileNames, err := attach.GetAttachmentsForEmail(r, email, files)
 			if err == nil {
 				for i := 0; i < len(bytesArray); i++ {
+					log.Infof(c, "%v", attachmentType[i])
+					log.Infof(c, "%v", fileNames[i])
+
+					str := base64.StdEncoding.EncodeToString(bytesArray[i])
+
 					attachment := []byte(
 						"--" + boundary + nl +
-							"Content-Type: " + attachmentType[i] + "; name=\"" + fileNames[i] + "\"" + nl +
+							"Content-Type: " + attachmentType[i] + nl +
+							"MIME-Version: 1.0" + nl +
 							"Content-Disposition: attachment; filename=\"" + fileNames[i] + "\"" + nl +
-							"Content-Transfer-Encoding: base64" + nl +
-							string(bytesArray[i]) + nl,
+							"Content-Transfer-Encoding: base64" + nl + nl +
+							str + nl + nl,
 					)
 
 					temp = append(temp, attachment...)
