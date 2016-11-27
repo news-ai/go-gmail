@@ -95,18 +95,18 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 			"Subject: " + subject + nl +
 
 			"Content-type: multipart/alternative; boundary=\"" + boundary + "\"" + nl +
-			"--" + boundary + "--" + nl +
+			"--" + boundary + nl +
 
 			"Content-Type: text/html; charset=UTF-8" + nl +
 			"Content-Transfer-Encoding: base64" + nl +
-			nl + body)
+			nl + body + nl)
 
 		for i := 0; i < len(files); i++ {
 			bytesArray, attachmentType, fileNames, err := attach.GetAttachmentsForEmail(r, email, files)
 			if err == nil {
 				for i := 0; i < len(bytesArray); i++ {
 					attachment := []byte(
-						"--" + boundary + "--" + nl +
+						"--" + boundary + nl +
 							"Content-Type: " + attachmentType[i] + "; name=\"" + fileNames[i] + "\"" + nl +
 							"Content-Disposition: attachment; filename=\"" + fileNames[i] + "\"" + nl +
 							"Content-Transfer-Encoding: base64" + nl +
