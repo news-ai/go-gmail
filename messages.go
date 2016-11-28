@@ -87,9 +87,24 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 		nl := "\r\n" // newline
 		boundary := "__newsai_tabulae__"
 
+		CC := ""
+		BCC := ""
+
+		if len(email.CC) > 0 {
+			log.Infof(c, "%v", email.CC)
+			CC = "Cc: " + strings.Join(email.CC, ",") + nl
+		}
+
+		if len(email.BCC) > 0 {
+			log.Infof(c, "%v", email.BCC)
+			BCC = "Bcc: " + strings.Join(email.BCC, ",") + nl
+		}
+
 		var message Message
 		temp := []byte("MIME-Version: 1.0" + nl +
 			"To:  " + to + nl +
+			CC +
+			BCC +
 			"From: " + from + nl +
 			"reply-to: " + from + nl +
 			"Subject: " + subject + nl +
@@ -179,13 +194,28 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 	return "", "", errors.New("No access token supplied")
 }
 
-func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string) (string, string, error) {
+func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string, email models.Email) (string, string, error) {
 	if len(g.AccessToken) > 0 {
 		contextWithTimeout, _ := context.WithTimeout(c, time.Second*15)
 		client := urlfetch.Client(contextWithTimeout)
 
+		CC := ""
+		BCC := ""
+
+		if len(email.CC) > 0 {
+			log.Infof(c, "%v", email.CC)
+			CC = "Cc: " + strings.Join(email.CC, ",") + "\r\n"
+		}
+
+		if len(email.BCC) > 0 {
+			log.Infof(c, "%v", email.BCC)
+			BCC = "Bcc: " + strings.Join(email.BCC, ",") + "\r\n"
+		}
+
 		var message Message
 		temp := []byte("From: " + from + "\r\n" +
+			CC +
+			BCC +
 			"reply-to: " + from + "\r\n" +
 			"Content-type: text/html;charset=iso-8859-1\r\n" +
 			"MIME-Version: 1.0\r\n" +
