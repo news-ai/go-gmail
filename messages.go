@@ -21,6 +21,12 @@ import (
 	gmailv1 "google.golang.org/api/gmail/v1"
 )
 
+type GmailSendEmailResponse struct {
+	Id       string   `json:"id"`
+	ThreadId string   `json:"threadId"`
+	LabelIds []string `json:"labelIds"`
+}
+
 type EmailListResponse struct {
 	Messages []struct {
 		ID       string `json:"id"`
@@ -246,9 +252,20 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 			return "", "", err
 		}
 
+		/*
+			Sample response format:
+			{
+				"id": "15d8acd1e283b956",
+				"threadId": "15d8acd1e283b956",
+				"labelIds": [
+					"SENT"
+				]
+			}
+		*/
+
 		// Decode JSON from Google
 		decoder := json.NewDecoder(response.Body)
-		var gmailMessage gmailv1.Message
+		var gmailMessage GmailSendEmailResponse
 		err = decoder.Decode(&gmailMessage)
 		if err != nil {
 			log.Errorf(c, "%v", err)
