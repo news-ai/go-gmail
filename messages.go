@@ -180,6 +180,7 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 			log.Errorf(c, "%v", err)
 			return "", "", err
 		}
+		defer response.Body.Close()
 
 		// Decode JSON from Google
 		decoder := json.NewDecoder(response.Body)
@@ -251,6 +252,7 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 			log.Errorf(c, "%v", err)
 			return "", "", err
 		}
+		defer response.Body.Close()
 
 		/*
 			Sample response format:
@@ -292,8 +294,8 @@ func (g *Gmail) GetEmails(c context.Context, MaxResults int) (response EmailList
 			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
-
 		defer response.Body.Close()
+
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			log.Errorf(c, "%v", err)
@@ -330,8 +332,8 @@ func (g *Gmail) GetEmailById(c context.Context, emailId string) (response EmailI
 			log.Errorf(c, "%v", err)
 			return toReturn, err
 		}
-
 		defer response.Body.Close()
+
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			log.Errorf(c, "%v", err)

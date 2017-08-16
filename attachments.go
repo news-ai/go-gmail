@@ -32,8 +32,8 @@ func (g *Gmail) GetAttachmentById(c context.Context, messageId string, attachmen
 			fmt.Printf("%s", err)
 			return toReturn, err
 		}
-
 		defer response.Body.Close()
+
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return toReturn, err

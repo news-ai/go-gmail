@@ -39,8 +39,8 @@ func (g *Gmail) GetProfile(c context.Context) (response UserProfile, err error) 
 			fmt.Printf("%s", err)
 			return toReturn, err
 		}
-
 		defer response.Body.Close()
+
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return toReturn, err
