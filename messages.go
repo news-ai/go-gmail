@@ -14,7 +14,6 @@ import (
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
 
-	"github.com/news-ai/tabulae/attach"
 	"github.com/news-ai/tabulae/models"
 
 	"golang.org/x/net/context"
@@ -84,12 +83,8 @@ type Message struct {
 	Raw string `json:"raw,omitempty"`
 }
 
-func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, from string, to string, subject string, body string, email models.Email, files []models.File) (string, string, error) {
-
+func (g *Gmail) SendEmailWithAttachments(c context.Context, from string, to string, subject string, body string, email models.Email, files []models.File, bytesArray [][]byte, attachmentType []string, fileNames []string) (string, string, error) {
 	if len(g.AccessToken) > 0 {
-		contextWithTimeout, _ := context.WithTimeout(c, time.Second*15)
-		client := urlfetch.Client(contextWithTimeout)
-
 		nl := "\r\n" // newline
 		boundary := "__newsai_tabulae__"
 
@@ -127,8 +122,7 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 			// Body itself
 			body + nl + nl)
 
-		bytesArray, attachmentType, fileNames, err := attach.GetAttachmentsForEmail(r, email, files)
-		if err == nil {
+		if len(files) > 0 {
 			for i := 0; i < len(bytesArray); i++ {
 				log.Infof(c, "%v", attachmentType[i])
 				log.Infof(c, "%v", fileNames[i])
@@ -175,6 +169,7 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 		req.Header.Add("Authorization", "Bearer "+g.AccessToken)
 		req.Header.Add("Content-Type", "application/json")
 
+		client := &http.Client{}
 		response, err := client.Do(req)
 		if err != nil {
 			log.Errorf(c, "%v", err)
@@ -201,9 +196,6 @@ func (g *Gmail) SendEmailWithAttachments(r *http.Request, c context.Context, fro
 
 func (g *Gmail) SendEmail(c context.Context, from string, to string, subject string, body string, email models.Email) (string, string, error) {
 	if len(g.AccessToken) > 0 {
-		contextWithTimeout, _ := context.WithTimeout(c, time.Second*15)
-		client := urlfetch.Client(contextWithTimeout)
-
 		CC := ""
 		BCC := ""
 
@@ -247,6 +239,7 @@ func (g *Gmail) SendEmail(c context.Context, from string, to string, subject str
 		req.Header.Add("Authorization", "Bearer "+g.AccessToken)
 		req.Header.Add("Content-Type", "application/json")
 
+		client := &http.Client{}
 		response, err := client.Do(req)
 		if err != nil {
 			log.Errorf(c, "%v", err)
